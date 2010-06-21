@@ -1,0 +1,1 @@
+Q[x,y,z] {x+y+z,x*y+y*z+z*x}
