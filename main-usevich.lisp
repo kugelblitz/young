@@ -11,6 +11,7 @@
 (defvar *normal-forms*)
 (defvar *basis*)
 (defvar *qa-dim*)
+(defvar *max-coideal* 100)
 
 (defun get-normal-form (monom)
   (or (gethash monom *normal-forms*)
@@ -42,19 +43,20 @@
         (seq)
         (dim 0)
         (cnt 0))
+    (when (find-divisor (car outer) coideal)
+      (return-from test-hypo))
     (loop
        do
-         (format t "~a " dim)
          (when (equalp dim *qa-dim*)
-           (format t "FOUND! ~%~a~%" corners)
+           (format t "FOUND ~a~%" corners)
            (return-from test-hypo corners))
          (incf cnt)
-         (when (equalp cnt 100)
-           (print "GIVING UP")
+         (when (equalp cnt *max-coideal*)
+           (format t "GIVING UP~%")
            (return-from test-hypo nil))
          (let ((new-corner (closest-to-origin outer)))
            (unless new-corner
-             (print "IN A CAVE")
+             (format t "IN A CAVE~%")
              (return-from test-hypo nil))
            (push new-corner seq)
            (unless (gauss:add-polynom (get-normal-form new-corner))
@@ -68,8 +70,7 @@
 
 (defun main ()
   (let ((vars)
-        (poly-io:*vars* nil)
-        )
+        (poly-io:*vars* nil))
     
     (format t "Input list of variables:")
     (force-output)
@@ -94,17 +95,17 @@
     (polys-print *basis*)
     (format t "~%")
 
-    (format t "QA-DIM ~a~%" *qa-dim*)
+    (format t "QA-DIM=~a~%" *qa-dim*)
+    (format t "MLIMS:~%")
     (let ((find-mlims:*on-mlims*
-           (lambda (func) (format t "~a~%" (funcall func :corners))
-                   (push (funcall func :corners) *mlims*)))
-          )
+           (lambda (func) (format t "  ~a~%" (funcall func :corners))
+                   (push (funcall func :corners) *mlims*))))
       (find-mlims *basis* :full-only t))
     (for-all-representatives
      *mlims*
      (lambda (rep)
        (let ((*boundary-dimples* rep)
              (*normal-forms* (make-hash-table :test #'equalp)))
-         (print rep)
+         (format t "trying ~a... " rep)
          (test-hypo rep))))
     ))
