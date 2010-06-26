@@ -1,6 +1,7 @@
 (defpackage main
   (:use :common-lisp :dimension :combinatorics :young :geometry
         :algebra :poly-io :external-helpers :find-mlims :cl-ppcre
+        :calculus
         #+cmu :ext
         #+sbcl :sb-ext))
 
@@ -11,7 +12,6 @@
 (defvar *normal-forms*)
 (defvar *basis*)
 (defvar *qa-dim*)
-(defvar *max-coideal* 100)
 
 (defun get-normal-form (monom)
   (or (gethash monom *normal-forms*)
@@ -51,7 +51,7 @@
            (format t "FOUND ~a~%" corners)
            (return-from test-hypo corners))
          (incf cnt)
-         (when (equalp cnt *max-coideal*)
+         (when (equalp cnt (sqr *qa-dim*))
            (format t "GIVING UP~%")
            (return-from test-hypo nil))
          (let ((new-corner (closest-to-origin outer)))
@@ -100,5 +100,4 @@
        (let ((*boundary-dimples* rep)
              (*normal-forms* (make-hash-table :test #'equalp)))
          (format t "trying ~a... " rep)
-         (test-hypo rep))))
-    ))
+         (test-hypo rep))))))
