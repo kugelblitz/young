@@ -18,21 +18,23 @@
   #+sbcl (posix-getenv "PWD"))
 
 (defun get-groebner-base-string (polys)
-  (let ((polys-str (with-output-to-string (*standard-output*)
-                     (polys-print polys)))
-        (vars-str (with-output-to-string (*standard-output*)
-                    (vars-print)))
-        (result))
-    (setf result
-          (with-output-to-string (out)
-            (run-program
-             "/bin/sh"
-             (list
-              (concatenate 'string *current-directory* "/gb.sh")
-              polys-str
-              vars-str) :output out)
-            out))
-    (subseq result 0 (length result))))
+  (let ((script
+         (with-output-to-string (*standard-output*)
+           (format t "display2d:false;~%")
+           (format t "poly_return_term_list:true;")
+           (format t "load(grobner);")
+           (format t "poly_monomial_order:grevlex;")
+           (format t "poly_reduced_grobner([")
+           (polys-print polys)
+           (format t "],[")
+           (vars-print)
+           (format t "]);"))))
+    (with-output-to-string (out)
+      (with-input-from-string (in script)
+        (run-program
+         "maxima"
+         (list "--very-quiet") :search t :input in :output out))
+      out)))
 
 (defun get-groebner-base (polys)
   (let* ((groebner-base-string (get-groebner-base-string polys))
@@ -48,12 +50,12 @@
             (format t "complex := ~a;~%" simplices-str)
             (format t "Display(SimplicialHomology(complex));~%")
             (format t "quit;~%")))
-            (with-input-from-string (in script)
-              (run-program "/usr/bin/gap" (list "-q" "-b")
-                           :output *standard-output*
-                           :input in
-                           #+sbcl :environment
-                           #+sbcl (list "LD_LIBRARY_PATH=.")))))
+    (with-input-from-string (in script)
+      (run-program "/usr/bin/gap" (list "-q" "-b")
+                   :output *standard-output*
+                   :input in
+                   #+sbcl :environment
+                   #+sbcl (list "LD_LIBRARY_PATH=.")))))
 
 (defun calculate-preimage (vars vars-c composition basis)
   (let ((poly-io:*vars* vars-c)

@@ -69,22 +69,15 @@
                   (add-dimple outer new-corner)))))))
 
 (defun main ()
-  (let ((vars)
-        (poly-io:*vars* nil))
-    
+  (let ((poly-io:*vars* nil))
     (format t "Input list of variables:")
     (force-output)
-    (setf vars (cl-ppcre:split " " (read-line)))
-
-    (setf *dimension* (length vars))
-    (setf poly-io:*vars* vars)
+    (setf poly-io:*vars* (cl-ppcre:split " " (read-line)))
+    (setf *dimension* (length poly-io:*vars*))
     
     (format t "Input generators:")
     (force-output)
-    (setf *basis* (parse-polys (read-line)))
-
-    (setf *basis* (get-groebner-base *basis*))
-
+    (setf *basis* (get-groebner-base (parse-polys (read-line))))
     (setf *mlims* nil)
 
     (setf *qa-dim* (n-points-under (mapcar #'cdar *basis*)))
