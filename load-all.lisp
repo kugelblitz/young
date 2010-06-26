@@ -1,4 +1,5 @@
 ;;(load "declaim.lisp")
+(require 'asdf)
 (load "dimension.lisp")
 (load "combinatorics.lisp")
 (load "algebra.lisp")

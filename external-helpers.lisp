@@ -17,24 +17,58 @@
   #+cmu (cdr (assoc :pwd  *environment-list*))
   #+sbcl (posix-getenv "PWD"))
 
+(defun file-string (path)
+  "Sucks up an entire file from PATH into a freshly-allocated string,
+      returning two values: the string and the number of bytes read."
+  (with-open-file (s path)
+    (let* ((len (file-length s))
+           (data (make-string len)))
+      (values data (read-sequence data s)))))
+
+(defun delete-file-if-exists (filename)
+  (when (probe-file filename) (delete-file filename)))
+
+;; (defun get-groebner-base-string (polys)
+;;   (let ((script
+;;          (with-output-to-string (*standard-output*)
+;;            (format t "display2d:false;~%")
+;;            (format t "poly_return_term_list:true;")
+;;            (format t "load(grobner);")
+;;            (format t "poly_monomial_order:grevlex;")
+;;            (format t "poly_reduced_grobner([")
+;;            (polys-print polys)
+;;            (format t "],[")
+;;            (vars-print)
+;;            (format t "]);"))))
+;;     (with-output-to-string (out)
+;;       (with-input-from-string (in script)
+;;         (run-program
+;;          "maxima"
+;;          (list "--very-quiet") :search t :input in :output out))
+;;       out)))
+
 (defun get-groebner-base-string (polys)
-  (let ((script
-         (with-output-to-string (*standard-output*)
-           (format t "display2d:false;~%")
-           (format t "poly_return_term_list:true;")
-           (format t "load(grobner);")
-           (format t "poly_monomial_order:grevlex;")
-           (format t "poly_reduced_grobner([")
-           (polys-print polys)
-           (format t "],[")
-           (vars-print)
-           (format t "]);"))))
-    (with-output-to-string (out)
-      (with-input-from-string (in script)
-        (run-program
-         "maxima"
-         (list "--very-quiet") :search t :input in :output out))
-      out)))
+  ; messing with files just to make it work under SBCL on Windows
+  ; (the streaming version, commented above, simply does not)
+  (let ((infile-name ".maxima-groebner-in.txt")
+        (outfile-name ".maxima-groebner-out.txt"))
+    (with-open-file
+        (*standard-output* infile-name
+                           :direction :output :if-exists :supersede)
+      (format t "display2d:false;~%")
+      (format t "poly_return_term_list:true;~%")
+      (format t "load(grobner);~%")
+      (format t "poly_monomial_order:grevlex;~%")
+      (format t "poly_reduced_grobner([")
+      (polys-print polys)
+      (format t "],[")
+      (vars-print)
+      (format t "]);~%"))
+    (delete-file-if-exists outfile-name)
+    (run-program
+     "maxima" (list "--very-quiet") :search t
+     :input infile-name :output outfile-name)
+    (file-string outfile-name)))
 
 (defun get-groebner-base (polys)
   (let* ((groebner-base-string (get-groebner-base-string polys))
