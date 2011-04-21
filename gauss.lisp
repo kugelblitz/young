@@ -18,8 +18,6 @@
 (defvar *n-polys*)
 (defvar *n-monoms*)
 
-
-
 (defun copy-hash-table (table &key key test size
                                    rehash-size rehash-threshold)
   "Returns a copy of hash table TABLE, with the same keys and values
@@ -55,7 +53,7 @@ copy is returned by default."
          :initial-element 0))
   (setf (aref *sqmatrix* (1- *n-polys*) (1- *n-polys*)) 1)
   (setf *hash* (copy-hash-table *hash*))
-  
+  (setf *hmatrix* (copy-seq *hmatrix*))
   (loop for term in poly do
        (let ((hh (gethash (cdr term) *hash*)))
          (unless hh
