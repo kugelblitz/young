@@ -14,11 +14,10 @@
           (push (cons -1 pt) result))
         result)))
 
-(defun box-behnken (dimension &optional skip-zero)
+(defun box-behnken (dimension)
   (let ((cube (cube (1- dimension)))
         (result))
-    (unless skip-zero
-      (setf result (list (make-list dimension :initial-element 0)) ))
+    (setf result (list (make-list dimension :initial-element 0)))
     (dolist (cube-pt cube)
       (loop
          for i from 0 below dimension
@@ -30,15 +29,28 @@
              (push pt result))))
     result))
 
+(defun unit-vectors (dimension)
+  (let ((result))
+    (loop
+       for i from 0 below dimension
+       do
+         (let ((pt (make-list dimension :initial-element 0)))
+           (setf (nth i pt) 1)
+           (push (copy-list pt) result)
+           (setf (nth i pt) -1)
+           (push (copy-list pt) result)
+           ))
+    result))
+
 (defun box-wilson-ccf (dimension)
   "Wilson Central Composite Face-centered"
-  (append (cube dimension) (box-behnken dimension t)))
+  (append (cube dimension) (unit-vectors dimension)
+          (list (make-list dimension :initial-element 0))))
 
 (defun box-wilson-ccc (dimension)
   "Wilson Central Composite Circumscribed"
-  (let ((mult (/ (round (* 1000 (/ (sqrt dimension)
-                                    (sqrt (1- dimension))))) 1000)))
+  (let ((mult (/ (round (* 1000 (sqrt dimension))) 1000)))
     (append (cube dimension)
             (mapcar (lambda (pt)
                       (mapcar (lambda (x) (* x mult)) pt))
-                    (box-behnken dimension t)))))
+                    (unit-vectors dimension)))))
