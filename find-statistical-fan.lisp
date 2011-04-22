@@ -46,7 +46,7 @@
             (gauss:*n-polys* gauss:*n-polys*)
             (gauss:*n-monoms* gauss:*n-monoms*)
             (gauss:*hash* gauss:*hash*))
-        (let ((coef (gauss:add-polynom (evaluate-monomial dimple)))
+        (let ((coef (gauss:add-polynom (evaluate-monomial-use-cache dimple)))
               )
           (if coef
             (progn
@@ -76,7 +76,7 @@
                  (gauss:*n-polys* gauss:*n-polys*)
                  (gauss:*n-monoms* gauss:*n-monoms*)
                  (gauss:*hash* gauss:*hash*))
-             (when (gauss:add-polynom (evaluate-monomial dimple))
+             (when (gauss:add-polynom (evaluate-monomial-use-cache dimple))
                (error "internal error"))
              (find-fan-sub
               (cons dimple seq)
