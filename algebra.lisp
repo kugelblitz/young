@@ -80,7 +80,7 @@
 
 (defun term-mult (term1 term2)
   (cons (* (car term1) (car term2))
-	(monom-mult (cdr term1) (cdr term2))))
+        (monom-mult (cdr term1) (cdr term2))))
 
 (defun poly-mult-term (poly term)
   (mapcar (lambda (poly-term) (term-mult poly-term term)) poly))

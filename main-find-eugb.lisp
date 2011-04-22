@@ -19,7 +19,7 @@
     (setf vars (cl-ppcre:split " " (read-line)))
 
     (setf *dimension* (length vars))
-    (setf poly-io:*vars* vars)
+    )    (setf poly-io:*vars* vars)
     
     (format t "Input generators:")
     (force-output)
