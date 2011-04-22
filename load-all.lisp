@@ -16,3 +16,5 @@
 (load "find-eugb.lisp")
 (load "diagram-shape.lisp")
 (load "find-mlims.lisp")
+(load "experimental-design.lisp")
+(load "find-statistical-fan.lisp")
