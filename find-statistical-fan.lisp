@@ -46,8 +46,7 @@
             (gauss:*n-polys* gauss:*n-polys*)
             (gauss:*n-monoms* gauss:*n-monoms*)
             (gauss:*hash* gauss:*hash*))
-        (let ((coef (gauss:add-polynom (evaluate-monomial-use-cache dimple)))
-              )
+        (let ((coef (gauss:add-polynom (evaluate-monomial-use-cache dimple))))
           (if coef
             (progn
               (let ((seq (copy-list seq))
@@ -96,5 +95,4 @@
         (gauss:*hmatrix* (make-array 0))
         (gauss:*n-polys* 0)
         (gauss:*n-monoms* 0))
-    (find-fan-sub nil (list (zero-vector)) nil nil)
-    ))
+    (find-fan-sub nil (list (zero-vector)) nil nil)))
