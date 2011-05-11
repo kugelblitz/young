@@ -8,7 +8,10 @@
    for-all-pairs
    for-all-partitions
    n-points-under
-   for-all-representatives))
+   for-all-representatives
+   for-all-distinct-pairs
+   for-all-permutations
+   for-all-permutations-lists))
 
 (in-package combinatorics)
 
@@ -82,7 +85,7 @@
 (defun for-all-points-under (corners func
                              &optional (dimension (length (car corners))) fixed)
   (when (zerop dimension)
-    (apply func (list (reverse fixed)))
+    (funcall func (reverse fixed))
     (return-from for-all-points-under t))
   (let ((lim))
     (dolist (corner corners)
@@ -112,10 +115,36 @@
 
 (defun for-all-representatives (lists func)
   (unless (car lists)
-    (apply func (list nil)))
+    (funcall func nil))
   (when (car lists)
     (dolist (elem (car lists))
       (for-all-representatives
        (cdr lists)
        (lambda (x)
-         (apply func (list (cons elem x))))))))
+         (funcall func (cons elem x)))))))
+
+(defun for-all-distinct-pairs (list func)
+  (when (cdr list)
+    (dolist (elem (cdr list))
+      (funcall func (list (car list) elem)))
+    (for-all-distinct-pairs (cdr list) func)))
+
+(defun for-all-permutations (list func)
+  (if list
+      (for-all-cuts
+       list
+       (lambda (elem rest)
+         (for-all-permutations
+          rest
+          (lambda (perm) (funcall func (cons elem perm))))))
+      (funcall func nil)))
+
+(defun for-all-permutations-lists (lists func)
+  (if lists
+      (for-all-permutations
+       (car lists)
+       (lambda (perm)
+         (for-all-permutations-lists
+          (cdr lists)
+          (lambda (x) (funcall func (cons perm x))))))
+      (funcall func nil)))

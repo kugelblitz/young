@@ -65,5 +65,6 @@
   (let ((poly-io:*vars* '("x" "y" "z" "w" "p" "q"))
         (*on-sequence* #'on-sequence))
     (setf *vars* (subseq *vars* 0 3))
-    (run-test '(find-fan (box-behnken 3)))
+    (setf find-statistical-fan:*use-symmetry* t)
+    (run-test '(find-fan (box-wilson-ccc 3)))
     ))

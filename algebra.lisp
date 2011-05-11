@@ -4,6 +4,7 @@
    arrfixnum
    lex-more
    lex-less
+   lex-less-gen
    monom-divides
    min-lex
    poly-sub
@@ -31,6 +32,13 @@
     ((> (the fixnum (car monom2)) (the fixnum (car monom1))) t)
     ((< (the fixnum (car monom2)) (the fixnum (car monom1))) nil)
     (t (lex-less (cdr monom1) (cdr monom2)))))
+
+(defun lex-less-gen (monom1 monom2)
+  (cond
+    ((null monom1) nil)
+    ((> (car monom2) (car monom1)) t)
+    ((< (car monom2) (car monom1)) nil)
+    (t (lex-less-gen (cdr monom1) (cdr monom2)))))
 
 (defun min-lex (monoms)
   (let ((res (car monoms)))
