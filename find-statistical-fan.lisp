@@ -3,7 +3,8 @@
   (:export
    find-fan
    *on-sequence*
-   *use-symmetry*))
+   *use-symmetry*
+   *use-coordinate-repetitions*))
 
 (in-package find-statistical-fan)
 
@@ -12,6 +13,7 @@
 (defvar *on-sequence*)
 (defvar *boundary-dimples*)
 (defvar *use-symmetry* nil)
+(defvar *use-coordinate-repetitions* t)
 
 (defvar *symmetries*)
 (defvar *permutations*)
@@ -144,8 +146,8 @@
                (sort (permute-points corners symmetry) #'lex-more)))
           (when (lex-lex-more sorted-corners-perm sorted-corners)
             (return-from find-fan-sub nil)))))
-
     (setf (gethash sorted-corners *handled-diagrams*) 1))
+  
   (let ((*boundary-dimples* *boundary-dimples*)
         (remaining-dimples)
         (remaining-dimples-sorted))
@@ -189,8 +191,38 @@
               (cons dimple seq)
               (update-dimples other-dimples dimple)
               (add-corner corners dimple)
-              polys)))))
-      (yield-sequence seq polys)))
+              polys))))
+        (yield-sequence seq polys))))
+
+(defun remove-nth (list n)
+  (remove-if (constantly t) list :start n :end (1+ n)))
+
+(defun rep-counter (seq)
+  (let ((seq-sorted (sort seq #'<))
+)
+    max-rep))
+
+(defun rep-counters (design)
+  (let* ((dimension (length (car design)))
+         (counters (make-array dimension :initial-element 0)))
+    (loop for i from 0 below dimension
+       do
+         (let ((design-projection
+                (mapcar
+                 (lambda (x) (remove-nth (copy-list x) i))
+                 design))
+               (prev nil)
+               (max-rep 0)
+               (cur-rep 0))
+           (setf design-projection (sort design-projection #'lex-less-gen))
+           (dolist (point design-projection)
+             (if (equalp point prev)
+                 (incf cur-rep)
+                 (setf cur-rep 1))
+             (setf prev point)
+             (setf max-rep (max max-rep cur-rep)))
+           (setf (aref counters i) max-rep)))
+    counters))
 
 (defun find-fan (design)
   (let ((*design* design)
@@ -207,4 +239,24 @@
         (gauss:*n-polys* 0)
         (gauss:*n-monoms* 0))
     (setf *permutations* (merge-symmetries *symmetries*))
-    (find-fan-sub nil (list (zero-vector)) nil nil)))
+    (let ((seq nil)
+          (dimples (list (zero-vector)))
+          (corners nil))
+      (when *use-coordinate-repetitions*
+        (setf seq (list (zero-vector)))
+        (setf corners (list (zero-vector)))
+        (setf dimples (update-dimples nil (car seq)))
+        (gauss:add-polynom (evaluate-monomial-use-cache (zero-vector)))
+        (let ((rep-counters (rep-counters design)))
+          (loop for i from 0 below *dimension*
+             do
+               (loop for j from 1 below (aref rep-counters i)
+                  do
+                    (let ((newpt (zero-vector)))
+                      (setf (nth i newpt) j)
+                      (push newpt seq)
+                      (setf corners (add-corner corners newpt))
+                      (setf dimples (add-dimple dimples newpt))
+                      (when (gauss:add-polynom (evaluate-monomial-use-cache newpt))
+                        (error "unexpected: rep-counters")))))))
+      (find-fan-sub seq dimples corners nil))))
