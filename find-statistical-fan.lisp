@@ -197,11 +197,6 @@
 (defun remove-nth (list n)
   (remove-if (constantly t) list :start n :end (1+ n)))
 
-(defun rep-counter (seq)
-  (let ((seq-sorted (sort seq #'<))
-)
-    max-rep))
-
 (defun rep-counters (design)
   (let* ((dimension (length (car design)))
          (counters (make-array dimension :initial-element 0)))
