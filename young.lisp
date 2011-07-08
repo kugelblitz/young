@@ -250,7 +250,7 @@
          (*on-sequence* (lambda (seq) (declare (ignore seq)) (incf count)))
          (*on-diagram* nil)
          (*boundary-dimples* dimples))
-    (enumerate-weak-orderings 10000)
+    (enumerate-weak-orderings)
     count))
 
 (defun random-diagram-plancherel-markov (n)

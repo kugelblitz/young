@@ -11,7 +11,6 @@
 (defvar *design*)
 (defvar *evaluated-monomials*)
 (defvar *on-sequence*)
-(defvar *boundary-dimples*)
 (defvar *use-symmetry* nil)
 (defvar *use-coordinate-repetitions* t)
 
@@ -130,16 +129,12 @@
 (defun find-fan-sub (seq dimples corners polys)
   (let ((sorted-corners (sort (copy-list corners)
                               #'lex-more)))
-    ;; Reverse search: check if we will (or had) come to this diagram by another sequence
-    (unless *use-symmetry*
-      (unless (equalp (car seq) (car sorted-corners))
-        (return-from find-fan-sub nil)))
-
-    (when *use-symmetry*
-      ;; Check if we had come to this diagram by another sequence
-      (when (gethash sorted-corners *handled-diagrams*)
-        (return-from find-fan-sub nil))
     
+    ;; Check if we had come to this diagram by another sequence
+    (when (gethash sorted-corners *handled-diagrams*)
+      (return-from find-fan-sub nil))
+    
+    (when *use-symmetry*
       ;; Check if we will (or had) come to a diagram symmetric to this one
       (dolist (symmetry *symmetries*)
         (let ((sorted-corners-perm

@@ -60,7 +60,6 @@
         (gauss:*hash* (make-hash-table :test #'equalp))
         (gauss:*n-polys* 0)
         (gauss:*n-monoms* 0)
-        (inner)
         (outer (list (zero-vector)))
         (seq))
     (loop
@@ -86,7 +85,6 @@
                     (unless (zerop c)
                       (push (cons c monom) result)))
                (return-from find-poly result)))
-           (setf inner (add-corner inner new-corner))
            (setf outer
                  (delete-if
                   (lambda (x)
