@@ -240,7 +240,7 @@
         (let ((rep-counters (rep-counters design)))
           (loop for i from 0 below *dimension*
              do
-               (loop for j from 1 below (aref rep-counters i)
+               (loop for j from 1 below (1- (aref rep-counters i))
                   do
                     (let ((newpt (zero-vector)))
                       (setf (nth i newpt) j)
