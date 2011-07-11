@@ -135,14 +135,15 @@
       (return-from find-fan-sub nil))
     
     (when *use-symmetry*
-      ;; Check if we will (or had) come to a diagram symmetric to this one
+      ;; Check if we had come to a diagram symmetric to this one
       (dolist (symmetry *symmetries*)
         (let ((sorted-corners-perm
                (sort (permute-points corners symmetry) #'lex-more)))
-          (when (lex-lex-more sorted-corners-perm sorted-corners)
+          (when (gethash sorted-corners-perm *handled-diagrams*)
             (return-from find-fan-sub nil)))))
     (setf (gethash sorted-corners *handled-diagrams*) 1))
   
+  ;;(format t "find-fan-sub ~a~%" seq)
   (let ((*boundary-dimples* *boundary-dimples*)
         (remaining-dimples)
         (remaining-dimples-sorted))
