@@ -222,7 +222,7 @@
         (*permutations*)
         (*handled-diagrams* (make-hash-table :test #'equalp))
         (*evaluated-monomials* (make-hash-table :test #'equalp))
-        (*boundary-dimples*)
+        (*boundary-dimples* *boundary-dimples*)
         (gauss:*hash* (make-hash-table :test #'equalp))
         (gauss:*matrix* (make-array '(0 0)))
         (gauss:*sqmatrix* (make-array '(0 0)))

@@ -131,10 +131,10 @@
     (let ((poly-io:*vars* vars))
       (parse-basis-maxima (car matches)))))
 
-(defun get-gfan (polys)
+(defun get-gfan (polys &optional (field "Q"))
   (let ((gfan-input
          (with-output-to-string (*standard-output*)
-           (format t "Q[")
+           (format t "~a[" field)
            (vars-print)
            (format t "] {")
            (polys-print polys)

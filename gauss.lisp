@@ -7,7 +7,8 @@
    *hmatrix*
    *hash*
    *n-polys*
-   *n-monoms*))
+   *n-monoms*
+   *finite-field*))
 
 (in-package gauss)
 
@@ -17,6 +18,7 @@
 (defvar *hash*)
 (defvar *n-polys*)
 (defvar *n-monoms*)
+(defvar *finite-field*)
 
 (defun copy-hash-table (table &key key test size
                                    rehash-size rehash-threshold)
@@ -78,11 +80,19 @@ copy is returned by default."
            (loop for j from 0 below *n-monoms*
               do
                 (decf (aref *matrix* (1- *n-polys*) j)
-                      (* val (aref *matrix* row j))))
+                      (* val (aref *matrix* row j)))
+                (when *finite-field*
+                  (setf (aref *matrix* (1- *n-polys*) j)
+                        (mod (aref *matrix* (1- *n-polys*) j)
+                             *finite-field*))))
            (loop for j from 0 below *n-polys*
               do
                 (decf (aref *sqmatrix* (1- *n-polys*) j)
-                      (* val (aref *sqmatrix* row j)))))))
+                      (* val (aref *sqmatrix* row j)))
+                (when *finite-field*
+                  (setf (aref *sqmatrix* (1- *n-polys*) j)
+                        (mod (aref *sqmatrix* (1- *n-polys*) j)
+                             *finite-field*)))))))
   (loop for i from 0 below *n-monoms*
      do
        (when (and (= -1 (aref *hmatrix* i))
@@ -91,18 +101,34 @@ copy is returned by default."
          (let ((val (aref *matrix* (1- *n-polys*) i)))
            (loop for j from 0 below *n-monoms* do
                 (setf (aref *matrix* (1- *n-polys*) j)
-                      (/ (aref *matrix* (1- *n-polys*) j) val)))
+                      (/ (aref *matrix* (1- *n-polys*) j) val))
+                (when *finite-field*
+                  (setf (aref *matrix* (1- *n-polys*) j)
+                        (mod (aref *matrix* (1- *n-polys*) j)
+                             *finite-field*))))
            (loop for j from 0 below *n-polys* do
                 (setf (aref *sqmatrix* (1- *n-polys*) j)
-                      (/ (aref *sqmatrix* (1- *n-polys*) j) val)))
+                      (/ (aref *sqmatrix* (1- *n-polys*) j) val))
+                (when *finite-field*
+                  (setf (aref *sqmatrix* (1- *n-polys*) j)
+                        (mod (aref *sqmatrix* (1- *n-polys*) j)
+                             *finite-field*))))
            (loop for k from 0 below (1- *n-polys*) do
                 (setq val (aref *matrix* k i))
                 (loop for j from 0 below *n-monoms* do
                      (decf (aref *matrix* k j)
-                           (* val (aref *matrix* (1- *n-polys*) j))))
+                           (* val (aref *matrix* (1- *n-polys*) j)))
+                     (when *finite-field*
+                       (setf (aref *matrix* (1- *n-polys*) j)
+                             (mod (aref *matrix* (1- *n-polys*) j)
+                                  *finite-field*))))
                 (loop for j from 0 below *n-polys* do
                      (decf (aref *sqmatrix* k j)
-                           (* val (aref *sqmatrix* (1- *n-polys*) j))))))
+                           (* val (aref *sqmatrix* (1- *n-polys*) j)))
+                     (when *finite-field*
+                       (setf (aref *sqmatrix* (1- *n-polys*) j)
+                             (mod (aref *sqmatrix* (1- *n-polys*) j)
+                                  *finite-field*))))))
          (return))
      finally
        (return-from add-polynom

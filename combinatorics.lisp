@@ -11,7 +11,8 @@
    for-all-representatives
    for-all-distinct-pairs
    for-all-permutations
-   for-all-permutations-lists))
+   for-all-permutations-lists
+   for-all-points-under))
 
 (in-package combinatorics)
 
