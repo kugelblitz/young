@@ -17,4 +17,5 @@
 (load "diagram-shape.lisp")
 (load "find-mlims.lisp")
 (load "experimental-design.lisp")
+(load "external-helpers.lisp")
 (load "find-statistical-fan.lisp")

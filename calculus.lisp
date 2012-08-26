@@ -1,6 +1,6 @@
 (defpackage calculus
   (:use :common-lisp)
-  (:export log-n-fact factorial sqr random-permutation))
+  (:export log-n-fact factorial sqr random-permutation nshuffle-list))
 
 (in-package calculus)
 
@@ -35,3 +35,7 @@
        do
          (setf (aref arr i) i))
     (concatenate 'list (nshuffle-vector arr))))
+
+
+(defun nshuffle-list (l)
+  (coerce (nshuffle-vector (make-array (length l) :initial-contents l)) 'list))

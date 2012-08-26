@@ -1,7 +1,7 @@
 (defpackage main
   (:use :common-lisp :dimension
         :algebra :poly-io :external-helpers :find-statistical-fan :experimental-design
-        :young :combinatorics :gauss
+        :young :combinatorics :gauss :calculus
         #+cmu :ext
         #+sbcl :sb-ext))
 
@@ -114,16 +114,15 @@
        unless (zerop flag) collect var-idx)))
 
 (defun analyze-basis (seq)
-  (format t "(")
-  (dolist (monom seq)
-    (unless (equalp monom (car seq))
-      (format t ", "))
-    (term-print (cons 1 monom)))
-  (format t ")~%")
+  ;; (format t "(")
+  ;; (dolist (monom seq)
+  ;;   (unless (equalp monom (car seq))
+  ;;     (format t ", "))
+  ;;   (term-print (cons 1 monom)))
+  ;; (format t ")~%")
   (let* ((size (length seq))
          (matr (make-array (list size size) :initial-element 0))
-         (deps-match t)
-         )
+         (deps-match t))
     (loop
        for pair in *pairs*
        for i from 0
@@ -151,22 +150,22 @@
                        sum
                          (* (aref inverted-matr i j) rs))
                     2))))
-        (format t "~a = " (nth idx *vars*))
-        (loop
-           for coef in coefs
-           for monom in seq
-           do
-             (unless (zerop coef)
-               (when (> coef 0)
-                 (format t "+"))
-               (when (= coef -1)
-                 (format t "-"))
-               (unless (or (= coef 1) (= coef -1))
-                 (format t "~a" coef))
-               (term-print (cons 1 monom))
-               (format t " ")))
+        ;; (format t "~a = " (nth idx *vars*))
+        ;;  (loop
+        ;;    for coef in coefs
+        ;;    for monom in seq
+        ;;    do
+        ;;      (unless (zerop coef)
+        ;;        (when (> coef 0)
+        ;;          (format t "+"))
+        ;;        (when (= coef -1)
+        ;;          (format t "-"))
+        ;;        (unless (or (= coef 1) (= coef -1))
+        ;;          (format t "~a" coef))
+        ;;        (term-print (cons 1 monom))
+        ;;        (format t " ")))
+        ;;(format t "~%")
         (let ((deps (extract-dependencies seq coefs)))
-          ;(format t "deps: ~a~%" deps)
           (unless (equalp deps (aref *expected-deps* idx))
             (setf deps-match nil)
             )
@@ -176,7 +175,6 @@
           ;     (incf (aref *matr-d* idx var-idx)
           ;           (/ 1 (length deps))))
           )
-        (format t "~%")
         ;(print coefs)
         ))
     (when deps-match
@@ -195,27 +193,29 @@
            (setf polys (cons (list (cons 1 (coerce vec1 'list))
                                    (cons -1 (coerce vec2 'list)))
                              polys))))
-    (format t "~%Groebner fan consists of...")
+    ;(format t "~%Groebner fan consists of...")
     (let ((*vars* *vars*))
-      (print polys)
+      ;(print polys)
       (setf *gfan* (get-gfan polys "Z/2Z"))
       (setf *gfan-under* nil))
-    (format t " ~a bases~%" (length *gfan*))
+    ;(format t " ~a bases~%" (length *gfan*))
     (dolist (polys *gfan*)
       (when
           (analyze-basis (monoms-under (mapcar #'cdar polys)))
         (setf *deps-matched-gfan* t))
-      (push (monoms-under (mapcar #'cdar polys)) *gfan-under*))
-    (format t "~%"))
+      ;(push (monoms-under (mapcar #'cdar polys)) *gfan-under*)
+      )
+    ;(format t "~%")
+    )
   (incf *count*)
   ;(return-from on-sequence)
   (setf seq (reverse seq))
   (when
       (analyze-basis seq)
     (setf *deps-matched-eugb* t))
-  (format t "~%")
-  (unless (find (sort (copy-list seq) #'lex-less) *gfan-under* :test #'equalp)
-    (format t "  (not in algebraic fan)~%"))
+  ;(format t "~%")
+  ;(unless (find (sort (copy-list seq) #'lex-less) *gfan-under* :test #'equalp)
+  ;  (format t "  (not in algebraic fan)~%"))
   )
 
 (defvar *transitions*)
@@ -297,8 +297,10 @@
         (l (nth 3 point))
         (p (nth 4 point)))
     (mapcar (lambda (x) (mod x 2))
-            (list a m (+ a (* b l))
-                  (+ l p (* b l))
+            (list a
+                  m
+                  (+ a (* b l) (* a b l))
+                  (+ p (* l (1+ b)) (* p l (1+ b)))
                   m))))
 
 (setf *transitions*
@@ -308,6 +310,7 @@
          (1 0 0 1 1)
          (1 0 1 1 1)
          (0 1 0 0 1)
+         (0 1 1 0 1)
          (0 0 1 0 1)
          (1 1 1 1 0)
          (0 1 0 1 0)
@@ -327,40 +330,96 @@
     (setf (nth idx result) 2)
     result))
 
+(defun generate-all-points (n)
+  (if (zerop n)
+      (list '())
+      (append
+       (mapcar
+        (lambda (x) (cons 0 x))
+        (generate-all-points (1- n)))
+       (mapcar
+        (lambda (x) (cons 1 x))
+        (generate-all-points (1- n))))))
+
+(defun for-all-min-subsets (set func)
+  (if set
+      (let ((saved))
+        (for-all-min-subsets
+         (cdr set)
+         (lambda (s)
+           (when (funcall func s)
+             (push s saved))))
+        (for-all-min-subsets
+         (cdr set)
+         (lambda (s)
+           (or (position s saved :test #'equalp)
+               (funcall func (cons (car set) s ))))))
+        
+      (progn
+        (funcall func nil)
+        nil)))
+
 
 (defun main ()
   (let* (
-         (poly-io:*vars* '("m" "b" "a" "l" "p"))
          ;(poly-io:*vars* '("a" "b" "c" "d" "e" "f"))
-
+         ;(*matr-d* (make-array (list (length *vars*)
+         ;                            (length *vars*)) :initial-element 0))
+         
+         (poly-io:*vars* '("m" "b" "a" "l" "p"))
          (*on-sequence* #'on-sequence)
          (gauss:*finite-field* 2)
-         (*pairs* (extract-pairs *transitions*))
-         (points (extract-points *pairs*))
-         (*matr-d* (make-array (list (length *vars*)
-                                     (length *vars*)) :initial-element 0))
-         (*deps-matched-gfan* nil)
-         (*deps-matched-eugb* nil))
-    ;(setf *vars* (subseq *vars* 0 5))
-    ;(setf find-statistical-fan:*use-symmetry* t)
-    (let ((*count* 0)
-          (*boundary-dimples* (loop for i from 0 below (length *vars*)
-                                 collect (vector-2 (length *vars*) i)))
-          )
-      ;(print (length points))
-      (find-fan points)
-      (format t "Found ~a models~%" *count*)
-      (format t "GFAN: ~a, EUGB: ~a~%" *deps-matched-gfan*
-              *deps-matched-eugb*)
-      (return-from main)
-      (loop for i from 0 below (length *vars*)
-         do
-           (loop for j from 0 below (length *vars*)
-              do
-                (setf (aref *matr-d* i j)
-                      (/ (aref *matr-d* i j) *count*))
-                (format t "~a " (float (aref *matr-d* i j))))
-           (format t "~%"))
+         (*boundary-dimples* (loop for i from 0 below (length *vars*)
+                                collect (vector-2 (length *vars*) i)))
+         ;(*pairs* (extract-pairs *transitions*))
+         ;(points (extract-points *pairs*))
+         (all-points
+          (nshuffle-list (nshuffle-list
+                          (nshuffle-list (generate-all-points 5)))))
+         (megacounter 0))
+    (print all-points)
+    (for-all-min-subsets
+     all-points
+     (lambda (points)
+       (when points
+         (let ((*pairs*
+                (mapcar
+                 (lambda (pt) (list pt (reference-func pt)))
+                 points))
+               (*count* 0)
+               (*deps-matched-gfan* nil)
+               (*deps-matched-eugb* nil))
+           (format t "pts #~a: ~a~%" megacounter points)
+           (incf megacounter)
+           (finish-output)
+           (find-fan points)
+           (format t "cnt: ~a,  GFAN: ~a, EUGB: ~a~%" *count*
+                   *deps-matched-gfan* *deps-matched-eugb*)
+           (unless (equalp *deps-matched-gfan* *deps-matched-eugb*)
+             (return-from main))
+           *deps-matched-eugb*
+    ;;   (format t "GFAN: ~a, EUGB: ~a~%" *deps-matched-gfan*
+    ;;           *deps-matched-eugb*)
+           )))
+)
+    ;; (let ((*count* 0)
+    ;;       (*deps-matched-gfan* nil)
+    ;;       (*deps-matched-eugb* nil))
+    ;;   (find-fan points)
+    ;;   (format t "Found ~a models~%" *count*)
+    ;;   (format t "GFAN: ~a, EUGB: ~a~%" *deps-matched-gfan*
+    ;;           *deps-matched-eugb*)
+    ;;   )
+   ))
+
+      ;; (loop for i from 0 below (length *vars*)
+      ;;    do
+      ;;      (loop for j from 0 below (length *vars*)
+      ;;         do
+      ;;           (setf (aref *matr-d* i j)
+      ;;                 (/ (aref *matr-d* i j) *count*))
+      ;;           (format t "~a " (float (aref *matr-d* i j))))
+      ;;      (format t "~%"))
       ;(format t "D = ~%~a~%" *matr-d*)
       ;; (loop for i from 0 below (length *vars*)
       ;;    do
@@ -374,5 +433,5 @@
       ;;               (format t "~a " (nth j *vars*))))
       ;;        (format t "~%")
       ;;        ))
-      )
-   ))
+
+(main)
