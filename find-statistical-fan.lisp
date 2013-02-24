@@ -153,7 +153,8 @@
             (gauss:*hmatrix* gauss:*hmatrix*)
             (gauss:*n-polys* gauss:*n-polys*)
             (gauss:*n-monoms* gauss:*n-monoms*)
-            (gauss:*hash* gauss:*hash*))
+            (gauss:*hash* gauss:*hash*)
+            (gauss:*finite-field* nil))
         (let ((coef (gauss:add-polynom (evaluate-monomial-use-cache dimple))))
           (if coef
             (progn
@@ -228,7 +229,8 @@
         (gauss:*sqmatrix* (make-array '(0 0)))
         (gauss:*hmatrix* (make-array 0))
         (gauss:*n-polys* 0)
-        (gauss:*n-monoms* 0))
+        (gauss:*n-monoms* 0)
+        (gauss:*finite-field* nil))
     (setf *permutations* (merge-symmetries *symmetries*))
     (let ((seq nil)
           (dimples (list (zero-vector)))

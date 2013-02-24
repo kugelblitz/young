@@ -177,8 +177,8 @@
           )
         ;(print coefs)
         ))
-    (when deps-match
-      (format t "DEPS MATCHED~%"))
+    ;(when deps-match
+    ;  (format t "DEPS MATCHED~%"))
     deps-match
     )  )
 
@@ -193,29 +193,41 @@
            (setf polys (cons (list (cons 1 (coerce vec1 'list))
                                    (cons -1 (coerce vec2 'list)))
                              polys))))
-    ;(format t "~%Groebner fan consists of...")
+    (format t "~%Groebner fan consists of...~%")
     (let ((*vars* *vars*))
-      ;(print polys)
       (setf *gfan* (get-gfan polys "Z/2Z"))
       (setf *gfan-under* nil))
     ;(format t " ~a bases~%" (length *gfan*))
     (dolist (polys *gfan*)
-      (when
-          (analyze-basis (monoms-under (mapcar #'cdar polys)))
-        (setf *deps-matched-gfan* t))
-      ;(push (monoms-under (mapcar #'cdar polys)) *gfan-under*)
-      )
-    ;(format t "~%")
+      (polys-print polys)
+      (format t "~%")
+      (let ((under (monoms-under (mapcar #'cdar polys))))
+        (when (analyze-basis under)
+          (setf *deps-matched-gfan* t))
+        (push under *gfan-under*)
+        (format t "  under: (")
+        (dolist (monom under)
+          (unless (equalp monom (car under))
+            (format t ", "))
+          (term-print (cons 1 monom)))
+        (format t ")~%")
+        ))
+    (format t "~%")
     )
   (incf *count*)
   ;(return-from on-sequence)
   (setf seq (reverse seq))
+  (format t "(")
+  (dolist (monom seq)
+    (unless (equalp monom (car seq))
+      (format t ", "))
+    (term-print (cons 1 monom)))
+  (format t ")~%")
   (when
       (analyze-basis seq)
     (setf *deps-matched-eugb* t))
-  ;(format t "~%")
-  ;(unless (find (sort (copy-list seq) #'lex-less) *gfan-under* :test #'equalp)
-  ;  (format t "  (not in algebraic fan)~%"))
+  (unless (find (sort (copy-list seq) #'lex-less) *gfan-under* :test #'equalp)
+    (format t "  (not in algebraic fan)~%"))
   )
 
 (defvar *transitions*)
@@ -290,39 +302,68 @@
 ;;          (1 0 1 0 0)
 ;;          (1 1 1 0 1))))
 
+;; (defun reference-func (point)
+;;   (let ((m (nth 0 point))
+;;         (b (nth 1 point))
+;;         (a (nth 2 point))
+;;         (l (nth 3 point))
+;;         (p (nth 4 point)))
+;;     (mapcar (lambda (x) (mod x 2))
+;;             (list a
+;;                   m
+;;                   (+ a (* b l) (* a b l))
+;;                   (+ p (* l (1+ b)) (* p l (1+ b)))
+;;                   m))))
+
 (defun reference-func (point)
-  (let ((m (nth 0 point))
-        (b (nth 1 point))
-        (a (nth 2 point))
-        (l (nth 3 point))
-        (p (nth 4 point)))
-    (mapcar (lambda (x) (mod x 2))
-            (list a
-                  m
-                  (+ a (* b l) (* a b l))
-                  (+ p (* l (1+ b)) (* p l (1+ b)))
-                  m))))
+  (let ((x (nth 0 point))
+        (y (nth 1 point))
+        (z (nth 2 point))
+        (w (nth 3 point)))
+    (list (* x z)
+          (* y w)
+          z
+          w)))
+
+;; (setf *transitions*
+;;       (mapcar
+;;        (lambda (pt) (list pt (reference-func pt)))
+;;        '((1 0 0 0 0)
+;;          (1 0 0 1 1)
+;;          (1 0 1 1 1)
+;;          (0 1 0 0 1)
+;;          (0 1 1 0 1)
+;;          (0 0 1 0 1)
+;;          (1 1 1 1 0)
+;;          (0 1 0 1 0)
+;;          )))
 
 (setf *transitions*
       (mapcar
        (lambda (pt) (list pt (reference-func pt)))
-       '((1 0 0 0 0)
-         (1 0 0 1 1)
-         (1 0 1 1 1)
-         (0 1 0 0 1)
-         (0 1 1 0 1)
-         (0 0 1 0 1)
-         (1 1 1 1 0)
-         (0 1 0 1 0)
+       '((0 0 0 0)
+         (0 0 1 0)
+         (0 0 1 1)
+         (0 1 0 0)
+         (0 1 1 1)
+         (1 0 0 0)
+         (1 0 1 1)
+         (1 1 0 0)
          )))
 
+;; (setf *expected-deps*
+;;       #((2)
+;;         (0)
+;;         (1 2 3)
+;;         (1 3 4)
+;;         (0)
+;;         ))
+
 (setf *expected-deps*
-      #((2)
-        (0)
-        (1 2 3)
-        (1 3 4)
-        (0)
-        ))
+      #((0 2)
+        (1 3)
+        (2)
+        (3)))
 
 (defun vector-2 (length idx)
   (let ((result
@@ -359,33 +400,51 @@
         (funcall func nil)
         nil)))
 
+(defvar points-from-article
+  '((0 0 0 0 0)
+    (0 0 0 1 0)
+    (0 0 1 0 0)
+    (0 0 1 1 0)
+    (0 1 0 0 0)  
+    (0 1 0 0 1)
+    (0 1 0 1 0)
+    (0 1 0 1 1)
+    (0 1 1 0 0)
+    (1 0 0 1 0)
+    (1 0 1 0 0)
+    (1 0 1 1 0)
+    (1 1 0 0 0)
+    (1 1 1 0 1)
+    (1 1 1 1 1)
+    ))
 
 (defun main ()
-  (let* (
+   (let* (
          ;(poly-io:*vars* '("a" "b" "c" "d" "e" "f"))
          ;(*matr-d* (make-array (list (length *vars*)
          ;                            (length *vars*)) :initial-element 0))
          
-         (poly-io:*vars* '("m" "b" "a" "l" "p"))
+          ;(poly-io:*vars* '("m" "b" "a" "l" "p"))
+          (poly-io:*vars* '("x" "y" "z" "w"))
          (*on-sequence* #'on-sequence)
          (gauss:*finite-field* 2)
          (*boundary-dimples* (loop for i from 0 below (length *vars*)
                                 collect (vector-2 (length *vars*) i)))
-         ;(*pairs* (extract-pairs *transitions*))
-         ;(points (extract-points *pairs*))
+         (*pairs* (extract-pairs *transitions*))
+         (points (extract-points *pairs*))
+         ;(all-points (generate-all-points 5))
          (all-points
-          (nshuffle-list (nshuffle-list
-                          (nshuffle-list (generate-all-points 5)))))
+          points-from-article)
          (megacounter 0))
-    (print all-points)
-    (for-all-min-subsets
-     all-points
-     (lambda (points)
-       (when points
-         (let ((*pairs*
-                (mapcar
-                 (lambda (pt) (list pt (reference-func pt)))
-                 points))
+    ;(print all-points)
+    ;(for-all-min-subsets
+    ; all-points
+    ; (lambda (points)
+    ;   (when points
+         (let (;(*pairs*
+               ; (mapcar
+               ;  (lambda (pt) (list pt (reference-func pt)))
+               ;  points))
                (*count* 0)
                (*deps-matched-gfan* nil)
                (*deps-matched-eugb* nil))
@@ -395,13 +454,12 @@
            (find-fan points)
            (format t "cnt: ~a,  GFAN: ~a, EUGB: ~a~%" *count*
                    *deps-matched-gfan* *deps-matched-eugb*)
-           (unless (equalp *deps-matched-gfan* *deps-matched-eugb*)
-             (return-from main))
+           ;(unless (equalp *deps-matched-gfan* *deps-matched-eugb*)
+           ;  (return-from main))
            *deps-matched-eugb*
-    ;;   (format t "GFAN: ~a, EUGB: ~a~%" *deps-matched-gfan*
-    ;;           *deps-matched-eugb*)
-           )))
-)
+
+   )))
+
     ;; (let ((*count* 0)
     ;;       (*deps-matched-gfan* nil)
     ;;       (*deps-matched-eugb* nil))
@@ -410,8 +468,6 @@
     ;;   (format t "GFAN: ~a, EUGB: ~a~%" *deps-matched-gfan*
     ;;           *deps-matched-eugb*)
     ;;   )
-   ))
-
       ;; (loop for i from 0 below (length *vars*)
       ;;    do
       ;;      (loop for j from 0 below (length *vars*)
@@ -435,3 +491,4 @@
       ;;        ))
 
 (main)
+(sb-ext:quit)

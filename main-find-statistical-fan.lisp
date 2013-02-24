@@ -1,16 +1,26 @@
 (defpackage main
   (:use :common-lisp :dimension
         :algebra :poly-io :external-helpers :find-statistical-fan :experimental-design
+        :combinatorics
         #+cmu :ext
         #+sbcl :sb-ext))
 
 (in-package main)
 (defvar *count*)
 (defvar *gfan*)
-(defvar *gfan-leading-terms*)
+(defvar *gfan-monoms-under*)
+(defvar *all-gfan-monoms-under*)
+(defvar *all-non-gfan-monoms-under*)
 
 (defun leading-terms (polys)
   (sort (mapcar #'cdar polys) #'lex-less))
+
+(defun monoms-under (corners)
+  (let ((result))
+    (for-all-points-under corners
+                          (lambda (monom)
+                            (setf result (cons monom result))))
+    (sort result #'lex-less)))
 
 (defun on-sequence (seq polys)
   (when (zerop *count*)
@@ -21,10 +31,24 @@
       (format t "~%"))
     (format t "~%Groebner fan consists of...")
     (setf *gfan* (get-gfan polys))
-    (setf *gfan-leading-terms* nil)
+    (setf *gfan-monoms-under* nil)
+    (setf *all-gfan-monoms-under* (make-hash-table :test #'equalp))
     (format t " ~a bases~%" (length *gfan*))
     (dolist (polys *gfan*)
-      (push (leading-terms polys) *gfan-leading-terms*))
+      ;(format t "gfan basis: ")
+      ;(polys-print polys)
+      ;(format t "~%")
+      ;(format t "  monoms under: ")
+      (let ((under (monoms-under (leading-terms polys))))
+        (dolist (monom under)
+          (setf (gethash monom *all-gfan-monoms-under*) 1)
+          ;(unless (equalp monom (car under))
+          ;  (format t ", "))
+          ;(term-print (cons 1 monom))
+          )
+        (push under *gfan-monoms-under*))
+      ;(format t "~%")
+      )
     (format t "~%"))
   (format t "(")
   (setf seq (reverse seq))
@@ -33,9 +57,21 @@
       (format t ", "))
     (term-print (cons 1 monom)))
   (format t ")~%")
-  (unless (find (leading-terms polys) *gfan-leading-terms* :test #'equalp)
-    (format t "  (not in algebraic fan)~%"))
+  ;(format t "  polys: ")
+  ;(polys-print polys)
+  ;(format t "~%")
+  (let ((pos (position
+              (sort (copy-list seq) #'lex-less)
+              *gfan-monoms-under* :test #'equalp)))
+    (if pos
+        nil;(format t "  (gbasis #~a)~%" pos)
+        (format t "  (not in algebraic fan)~%")))
+  (dolist (monom seq)
+    (unless (gethash monom *all-gfan-monoms-under*)
+      (format t "  !!! monom ~a NOT IN ANY OF GFAN QA BASES~%" monom)))
   (incf *count*))
+
+(defvar *pts*)
 
 (defun run-test (caller)
   (format t "~a~%" caller)
@@ -46,7 +82,7 @@
 (defun test ()
   (let ((poly-io:*vars* '("x" "y" "z" "w" "p" "q"))
         (*on-sequence* #'on-sequence))
-    (setf find-statistical-fan:*use-symmetry* t)
+    ;(setf find-statistical-fan:*use-symmetry* t)
     (setf find-statistical-fan:*use-coordinate-repetitions* t)
     (setf *vars* (subseq *vars* 0 4))
     (run-test '(find-fan (cube 4)))
@@ -64,11 +100,38 @@
   (with-open-file (*standard-output* filename :direction :output :if-exists :supersede)
     (test)))
 
+
+(defun all-binary (dim)
+  (if (= dim 1)
+      '((0) (1))
+      (let ((a (all-binary (- dim 1))))
+        (append
+         (mapcar (lambda (x) (cons 0 x)) a)
+         (mapcar (lambda (x) (cons 1 x)) a)))))
+
+(defun main2 ()
+  (let ((poly-io:*vars* '("x" "y" "z" "w" "p" "q"))
+        (*on-sequence* #'on-sequence))
+    (setf *vars* (subseq *vars* 0 4))
+    (let ((all (all-binary 4)))
+      (for-all-subsets
+       all
+       (lambda (subset)
+         (when (> (length subset) 3)
+           (format t "~%POINTS ~A~%~%" subset)
+           (let ((*pts* subset))
+             (run-test '(find-fan *pts*))
+             ))))
+       )
+    ))
+
 (defun main ()
   (let ((poly-io:*vars* '("x" "y" "z" "w" "p" "q"))
         (*on-sequence* #'on-sequence))
-    (setf *vars* (subseq *vars* 0 3))
-    (setf find-statistical-fan:*use-symmetry* t)
-    (run-test '(find-fan (box-wilson-ccf 3)))
-    ;(run-test '(find-fan (box-behnken 4)))
-    ))
+    (setf *vars* (subseq *vars* 0 4))
+    (let ((*pts* '((1 0 -1) (1 0 1) (0 -1 1)
+                   (0 0 2) (0 -1 0) (2 0 0))))
+      (run-test '(find-fan (box-behnken 4))))))
+
+(main)
+(sb-ext:quit)

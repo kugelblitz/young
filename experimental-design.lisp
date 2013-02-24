@@ -1,6 +1,6 @@
 (defpackage experimental-design
   (:use :common-lisp)
-  (:export cube box-behnken box-wilson-ccf box-wilson-ccc))
+  (:export cube box-behnken box-wilson-ccf box-wilson-ccc box-wilson-ccc-2))
 
 (in-package experimental-design)
 
@@ -50,6 +50,14 @@
 (defun box-wilson-ccc (dimension)
   "Wilson Central Composite Circumscribed"
   (let ((mult (/ (round (* 1000 (sqrt dimension))) 1000)))
+    (append (cube dimension)
+            (mapcar (lambda (pt)
+                      (mapcar (lambda (x) (* x mult)) pt))
+                    (unit-vectors dimension)))))
+
+(defun box-wilson-ccc-2 (dimension)
+  "Wilson Central Composite Circumscribed"
+  (let ((mult 2))
     (append (cube dimension)
             (mapcar (lambda (pt)
                       (mapcar (lambda (x) (* x mult)) pt))
