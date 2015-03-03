@@ -34,7 +34,27 @@
       (setf *nord-max* nord)
       (setf *c-max* c)
       (setf *diag-max* (funcall func :corners))
-      (print-results))))
+      ;(print-results)
+      )))
+
+(defun main2 ()
+  (setf *dimension* 2)
+
+  (loop for i from 1 below 1000 do
+   (let ()
+     (setf *n* i)
+	
+     (setf *n-fact* (factorial *n*))
+     (setf *lnf* (log-n-fact *n*))
+     (setf *n-found* 0)
+     (setf *nord-max* 0)
+     (setf *c-max* 0)
+     
+     (setf *on-diagram* #'on-diagram)
+     
+     (enumerate-symmetric-diagrams-2d *n*)
+     (print-results)
+     )))
 
 (defun main ()
   (setf *dimension* 2)
@@ -55,5 +75,6 @@
   (print-results)
   nil)
 
+;(main2)
 ;(main)
 ;(quit)
