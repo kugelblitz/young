@@ -383,3 +383,36 @@
            (yield-diagram n inner nil)
            (for-diagram-increments n inner))))
    0 (1- n) 0))
+
+(defun point-inside-diagram? (pt corners)
+  (and corners
+       (or (monom-divides pt (car corners))
+	   (point-inside-diagram? pt (cdr corners)))))
+
+(defun hash-keys (hash-table)
+  (loop for key being the hash-keys of hash-table collect key))
+
+(defun corners-to-dimples (corners)
+  (let* ((*dimension* (length (car corners)))
+	 (coords (apply #'mapcar (cons #'list (cons (zero-vector)
+						    (mapcar (lambda (corner)
+							      (mapcar #'1+ corner))
+							    corners)))))
+	 (dimples-hash (make-hash-table :test #'equalp))
+	 (result nil))
+    (for-all-representatives
+     coords
+     (lambda (dimple)
+       (when (and (not (point-inside-diagram? dimple corners))
+		  (not (gethash dimple dimples-hash)))
+	 (setf (gethash dimple dimples-hash) 1))))
+    (let ((candidates (hash-keys dimples-hash)))
+      (for-all-cuts
+       candidates
+       (lambda (dimple other-dimples)
+	 (unless (find-if
+		  (lambda (other-dimple)
+		    (monom-divides other-dimple dimple))
+		  other-dimples)
+	   (setf result (cons dimple result))))))
+    result))
