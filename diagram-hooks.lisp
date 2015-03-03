@@ -16,7 +16,7 @@
   (let ((widths (make-array (length corners) :element-type 'fixnum))
         (heights (make-array (length corners) :element-type 'fixnum))
         (hh 0))
-    (setf corners (sort corners #'lex-less))
+    (setf corners (sort (copy-list corners) #'lex-less))
     (do ((iter corners (cdr iter))
          (i 0 (1+ i))
          (prev-x -1 (caar iter)))
