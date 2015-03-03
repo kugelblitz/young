@@ -41,15 +41,9 @@
     (when nil;(zerop (mod *n-found* 10000))
       (print-results))))
 
-(defun main ()
-  (format t "Input dimension: ")
-  (force-output)
-  (setf *dimension* (parse-integer (read-line)))
-
-  (format t "Input diagram size: ")
-  (force-output)
-  (setf *n* (parse-integer (read-line)))
-
+(defun main-sub (dim size)
+  (setf *dimension* dim)
+  (setf *n* size)
   (setf *n-fact* (factorial *n*))
   (setf *lnf* (log-n-fact *n*))
   (setf *n-found* 0)
@@ -61,6 +55,22 @@
   (enumerate-diagrams *n*)
   (print-results)
   nil)
+
+(defun main ()
+  (let ((dim nil)
+	(size nil))
+    (format t "Input dimension: ")
+    (force-output)
+    (setf dim (parse-integer (read-line)))
+    (format t "Input diagram size: ")
+    (force-output)
+    (setf size (parse-integer (read-line)))
+    (main-sub dim size)))
+
+(defun main-loop ()
+    (loop for i from 3 to 300 do
+	 (main-sub 2 i)))
+
 
 ;(main)
 ;(quit)
